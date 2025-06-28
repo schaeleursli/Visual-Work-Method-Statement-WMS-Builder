@@ -121,9 +121,9 @@ export function App() {
         </div>
       </footer>
       {/* User Profile Modal */}
-      {showUserProfile && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+      {showUserProfile && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg my-8">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold text-gray-800">
                 User Settings
               </h2>
@@ -131,8 +131,10 @@ export function App() {
                 ✕
               </button>
             </div>
-            <div className="p-6">
-              <UserProfile userMetadata={userMetadata} companyMetadata={companyMetadata} onUpdateUserMetadata={setUserMetadata} onUpdateCompanyMetadata={setCompanyMetadata} />
+            <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
+              <div className="p-6">
+                <UserProfile userMetadata={userMetadata} companyMetadata={companyMetadata} onUpdateUserMetadata={setUserMetadata} onUpdateCompanyMetadata={setCompanyMetadata} />
+              </div>
             </div>
           </div>
         </div>}

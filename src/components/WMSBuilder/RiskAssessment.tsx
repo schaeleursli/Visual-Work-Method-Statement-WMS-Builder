@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangleIcon, PlusIcon, XIcon, InfoIcon, CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
+import { RiskMatrix } from './RiskMatrix';
 // Define risk types and interfaces
 interface Risk {
   id: string;
@@ -163,6 +164,7 @@ export const RiskAssessment: React.FC<RiskAssessmentProps> = ({
     residualLikelihood: 2,
     isCustom: true
   });
+  const [viewMode, setViewMode] = useState<'table' | 'matrix'>('matrix');
   // Initialize steps with risks if they don't have them
   useEffect(() => {
     steps.forEach(step => {
@@ -325,247 +327,380 @@ export const RiskAssessment: React.FC<RiskAssessmentProps> = ({
           <h3 className="text-lg font-medium text-gray-800">
             Risk Assessment (ALARP)
           </h3>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+              <button className={`py-1 px-3 text-sm font-medium rounded-md ${viewMode === 'matrix' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setViewMode('matrix')}>
+                Matrix View
+              </button>
+              <button className={`py-1 px-3 text-sm font-medium rounded-md ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setViewMode('table')}>
+                Table View
+              </button>
+            </div>
             <div className="text-sm text-gray-600 flex items-center">
               <InfoIcon size={16} className="mr-1 text-blue-500" />
               <span>ALARP: As Low As Reasonably Practicable</span>
             </div>
           </div>
         </div>
-        <div className="mb-6">
-          <div className="flex items-center space-x-4 mb-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-sm text-gray-600">High Risk (&gt;12)</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span className="text-sm text-gray-600">Medium Risk (6-12)</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">Low Risk (≤5)</span>
-            </div>
-          </div>
-          <p className="text-sm text-gray-600">
-            All risks should be reduced to ALARP (As Low As Reasonably
-            Practicable). High risks require immediate mitigation.
-          </p>
-        </div>
-        <div className="space-y-4">
-          {steps.map(step => {
+        {viewMode === 'matrix' ? <div className="space-y-6">
+            {steps.map(step => <div key={step.id} className="mb-6">
+                <RiskMatrix step={step} onUpdateRisk={(riskId, field, value) => handleUpdateRisk(step.id, riskId, field, value)} onAddRisk={() => handleAddRisk(step.id)} onDeleteRisk={riskId => handleDeleteRisk(step.id, riskId)} />
+                {isAddingRisk === step.id && <div className="mt-4 border border-blue-200 rounded-md p-4 bg-blue-50">
+                    <h5 className="font-medium text-gray-800 mb-3">
+                      Add New Risk
+                    </h5>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Risk Description
+                        </label>
+                        <input type="text" value={newRisk.description} onChange={e => setNewRisk({
+                  ...newRisk,
+                  description: e.target.value
+                })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Describe the risk..." />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Initial Assessment
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">
+                                Severity
+                              </label>
+                              <select value={newRisk.severity} onChange={e => setNewRisk({
+                        ...newRisk,
+                        severity: parseInt(e.target.value)
+                      })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value={1}>1 - Minimal</option>
+                                <option value={2}>2 - Minor</option>
+                                <option value={3}>3 - Moderate</option>
+                                <option value={4}>4 - Major</option>
+                                <option value={5}>5 - Catastrophic</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">
+                                Likelihood
+                              </label>
+                              <select value={newRisk.likelihood} onChange={e => setNewRisk({
+                        ...newRisk,
+                        likelihood: parseInt(e.target.value)
+                      })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value={1}>1 - Rare</option>
+                                <option value={2}>2 - Unlikely</option>
+                                <option value={3}>3 - Possible</option>
+                                <option value={4}>4 - Likely</option>
+                                <option value={5}>5 - Almost Certain</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mitigation
+                          </label>
+                          <textarea value={newRisk.mitigation} onChange={e => setNewRisk({
+                    ...newRisk,
+                    mitigation: e.target.value
+                  })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="How will this risk be mitigated?" rows={1} />
+                          <div className="mt-1">
+                            <select value={newRisk.mitigationType} onChange={e => setNewRisk({
+                      ...newRisk,
+                      mitigationType: e.target.value as any
+                    })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                              <option value="Engineering">Engineering</option>
+                              <option value="Operational">Operational</option>
+                              <option value="Routing">Routing</option>
+                              <option value="Communication">
+                                Communication
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Residual Likelihood
+                        </label>
+                        <select value={newRisk.residualLikelihood} onChange={e => setNewRisk({
+                  ...newRisk,
+                  residualLikelihood: parseInt(e.target.value)
+                })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                          <option value={1}>1 - Rare</option>
+                          <option value={2}>2 - Unlikely</option>
+                          <option value={3}>3 - Possible</option>
+                          <option value={4}>4 - Likely</option>
+                          <option value={5}>5 - Almost Certain</option>
+                        </select>
+                      </div>
+                      <div className="flex justify-end space-x-3 mt-2">
+                        <button onClick={handleCancelNewRisk} className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 text-sm hover:bg-gray-50">
+                          Cancel
+                        </button>
+                        <button onClick={() => handleSaveNewRisk(step.id)} className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700" disabled={!newRisk.description}>
+                          Save Risk
+                        </button>
+                      </div>
+                    </div>
+                  </div>}
+              </div>)}
+          </div> : <div className="space-y-4">
+            {steps.map(step => {
           const alarpStatus = calculateStepAlarpStatus(step.risks);
           return <div key={step.id} className="border border-gray-200 rounded-md overflow-hidden">
-                <div className={`p-4 border-b border-gray-200 flex justify-between items-center cursor-pointer ${expandedStep === step.id ? 'bg-blue-50' : 'bg-gray-50'}`} onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}>
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium">
-                      {step.id}
+                  <div className={`p-4 border-b border-gray-200 flex justify-between items-center cursor-pointer ${expandedStep === step.id ? 'bg-blue-50' : 'bg-gray-50'}`} onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}>
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-blue-100 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium">
+                        {step.id}
+                      </div>
+                      <h4 className="font-medium text-gray-800">
+                        {step.title}
+                      </h4>
+                      {step.risks && step.risks.length > 0 && <div className="flex items-center space-x-2">
+                          <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {step.risks.length} Risks
+                          </div>
+                          {step.risks.filter(r => getRiskLevel(r.residualScore) === 'high').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              {step.risks.filter(r => getRiskLevel(r.residualScore) === 'high').length}{' '}
+                              High
+                            </div>}
+                          {step.risks.filter(r => getRiskLevel(r.residualScore) === 'medium').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              {step.risks.filter(r => getRiskLevel(r.residualScore) === 'medium').length}{' '}
+                              Medium
+                            </div>}
+                          {step.risks.filter(r => getRiskLevel(r.residualScore) === 'low').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {step.risks.filter(r => getRiskLevel(r.residualScore) === 'low').length}{' '}
+                              Low
+                            </div>}
+                        </div>}
                     </div>
-                    <h4 className="font-medium text-gray-800">{step.title}</h4>
-                    {step.risks && step.risks.length > 0 && <div className="flex items-center space-x-2">
-                        <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {step.risks.length} Risks
-                        </div>
-                        {step.risks.filter(r => getRiskLevel(r.residualScore) === 'high').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {step.risks.filter(r => getRiskLevel(r.residualScore) === 'high').length}{' '}
-                            High
-                          </div>}
-                        {step.risks.filter(r => getRiskLevel(r.residualScore) === 'medium').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            {step.risks.filter(r => getRiskLevel(r.residualScore) === 'medium').length}{' '}
-                            Medium
-                          </div>}
-                        {step.risks.filter(r => getRiskLevel(r.residualScore) === 'low').length > 0 && <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {step.risks.filter(r => getRiskLevel(r.residualScore) === 'low').length}{' '}
-                            Low
-                          </div>}
-                      </div>}
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-2">
-                        <div className={`h-2.5 rounded-full ${alarpStatus.isCompliant ? 'bg-green-500' : 'bg-yellow-500'}`} style={{
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-2">
+                          <div className={`h-2.5 rounded-full ${alarpStatus.isCompliant ? 'bg-green-500' : 'bg-yellow-500'}`} style={{
                       width: `${alarpStatus.percentage}%`
                     }}></div>
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {alarpStatus.percentage}% ALARP
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {alarpStatus.percentage}% ALARP
-                      </span>
+                      {alarpStatus.isCompliant ? <CheckCircleIcon size={20} className="text-green-500" /> : <AlertCircleIcon size={20} className="text-yellow-500" />}
                     </div>
-                    {alarpStatus.isCompliant ? <CheckCircleIcon size={20} className="text-green-500" /> : <AlertCircleIcon size={20} className="text-yellow-500" />}
                   </div>
-                </div>
-                {expandedStep === step.id && <div className="p-4">
-                    {step.risks && step.risks.length > 0 ? <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead>
-                            <tr>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {expandedStep === step.id && <div className="p-4">
+                      {step.risks && step.risks.length > 0 ? <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead>
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Risk Description
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Initial Assessment
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Mitigation
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Residual Risk
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {step.risks.map(risk => <tr key={risk.id} className="hover:bg-gray-50">
+                                  <td className="px-3 py-3">
+                                    <input type="text" value={risk.description} onChange={e => handleUpdateRisk(step.id, risk.id, 'description', e.target.value)} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                  </td>
+                                  <td className="px-3 py-3">
+                                    <div className="flex space-x-2 items-center">
+                                      <div>
+                                        <label className="block text-xs text-gray-500 mb-1">
+                                          Severity
+                                        </label>
+                                        <select value={risk.severity} onChange={e => handleUpdateRisk(step.id, risk.id, 'severity', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                          <option value={1}>1 - Minimal</option>
+                                          <option value={2}>2 - Minor</option>
+                                          <option value={3}>
+                                            3 - Moderate
+                                          </option>
+                                          <option value={4}>4 - Major</option>
+                                          <option value={5}>
+                                            5 - Catastrophic
+                                          </option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-gray-500 mb-1">
+                                          Likelihood
+                                        </label>
+                                        <select value={risk.likelihood} onChange={e => handleUpdateRisk(step.id, risk.id, 'likelihood', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                          <option value={1}>1 - Rare</option>
+                                          <option value={2}>
+                                            2 - Unlikely
+                                          </option>
+                                          <option value={3}>
+                                            3 - Possible
+                                          </option>
+                                          <option value={4}>4 - Likely</option>
+                                          <option value={5}>
+                                            5 - Almost Certain
+                                          </option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-gray-500 mb-1">
+                                          Score
+                                        </label>
+                                        <div className={`px-3 py-1 rounded-md text-sm font-medium ${getRiskLevelColor(getRiskLevel(risk.score))}`}>
+                                          {risk.score} -{' '}
+                                          {getRiskLevelText(getRiskLevel(risk.score))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-3">
+                                    <div className="space-y-2">
+                                      <textarea value={risk.mitigation} onChange={e => handleUpdateRisk(step.id, risk.id, 'mitigation', e.target.value)} rows={2} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                      <select value={risk.mitigationType} onChange={e => handleUpdateRisk(step.id, risk.id, 'mitigationType', e.target.value)} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="Engineering">
+                                          Engineering
+                                        </option>
+                                        <option value="Operational">
+                                          Operational
+                                        </option>
+                                        <option value="Routing">Routing</option>
+                                        <option value="Communication">
+                                          Communication
+                                        </option>
+                                      </select>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-3">
+                                    <div className="space-y-2">
+                                      <div>
+                                        <label className="block text-xs text-gray-500 mb-1">
+                                          Residual Likelihood
+                                        </label>
+                                        <select value={risk.residualLikelihood} onChange={e => handleUpdateRisk(step.id, risk.id, 'residualLikelihood', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                          <option value={1}>1 - Rare</option>
+                                          <option value={2}>
+                                            2 - Unlikely
+                                          </option>
+                                          <option value={3}>
+                                            3 - Possible
+                                          </option>
+                                          <option value={4}>4 - Likely</option>
+                                          <option value={5}>
+                                            5 - Almost Certain
+                                          </option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs text-gray-500 mb-1">
+                                          Residual Score
+                                        </label>
+                                        <div className={`px-3 py-1 rounded-md text-sm font-medium ${getRiskLevelColor(getRiskLevel(risk.residualScore))}`}>
+                                          {risk.residualScore} -{' '}
+                                          {getRiskLevelText(getRiskLevel(risk.residualScore))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-3">
+                                    {risk.isCustom && <button onClick={() => handleDeleteRisk(step.id, risk.id)} className="text-red-500 hover:text-red-700">
+                                        <XIcon size={18} />
+                                      </button>}
+                                  </td>
+                                </tr>)}
+                            </tbody>
+                          </table>
+                        </div> : <p className="text-gray-500 text-center py-4">
+                          No risks identified for this step yet.
+                        </p>}
+                      {isAddingRisk === step.id ? <div className="mt-4 border border-blue-200 rounded-md p-4 bg-blue-50">
+                          <h5 className="font-medium text-gray-800 mb-3">
+                            Add New Risk
+                          </h5>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Risk Description
-                              </th>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Initial Assessment
-                              </th>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Mitigation
-                              </th>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Residual Risk
-                              </th>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {step.risks.map(risk => <tr key={risk.id} className="hover:bg-gray-50">
-                                <td className="px-3 py-3">
-                                  <input type="text" value={risk.description} onChange={e => handleUpdateRisk(step.id, risk.id, 'description', e.target.value)} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                </td>
-                                <td className="px-3 py-3">
-                                  <div className="flex space-x-2 items-center">
-                                    <div>
-                                      <label className="block text-xs text-gray-500 mb-1">
-                                        Severity
-                                      </label>
-                                      <select value={risk.severity} onChange={e => handleUpdateRisk(step.id, risk.id, 'severity', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value={1}>1 - Minimal</option>
-                                        <option value={2}>2 - Minor</option>
-                                        <option value={3}>3 - Moderate</option>
-                                        <option value={4}>4 - Major</option>
-                                        <option value={5}>
-                                          5 - Catastrophic
-                                        </option>
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs text-gray-500 mb-1">
-                                        Likelihood
-                                      </label>
-                                      <select value={risk.likelihood} onChange={e => handleUpdateRisk(step.id, risk.id, 'likelihood', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value={1}>1 - Rare</option>
-                                        <option value={2}>2 - Unlikely</option>
-                                        <option value={3}>3 - Possible</option>
-                                        <option value={4}>4 - Likely</option>
-                                        <option value={5}>
-                                          5 - Almost Certain
-                                        </option>
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs text-gray-500 mb-1">
-                                        Score
-                                      </label>
-                                      <div className={`px-3 py-1 rounded-md text-sm font-medium ${getRiskLevelColor(getRiskLevel(risk.score))}`}>
-                                        {risk.score} -{' '}
-                                        {getRiskLevelText(getRiskLevel(risk.score))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-3">
-                                  <div className="space-y-2">
-                                    <textarea value={risk.mitigation} onChange={e => handleUpdateRisk(step.id, risk.id, 'mitigation', e.target.value)} rows={2} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                                    <select value={risk.mitigationType} onChange={e => handleUpdateRisk(step.id, risk.id, 'mitigationType', e.target.value)} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                      <option value="Engineering">
-                                        Engineering
-                                      </option>
-                                      <option value="Operational">
-                                        Operational
-                                      </option>
-                                      <option value="Routing">Routing</option>
-                                      <option value="Communication">
-                                        Communication
-                                      </option>
-                                    </select>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-3">
-                                  <div className="space-y-2">
-                                    <div>
-                                      <label className="block text-xs text-gray-500 mb-1">
-                                        Residual Likelihood
-                                      </label>
-                                      <select value={risk.residualLikelihood} onChange={e => handleUpdateRisk(step.id, risk.id, 'residualLikelihood', parseInt(e.target.value))} className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                        <option value={1}>1 - Rare</option>
-                                        <option value={2}>2 - Unlikely</option>
-                                        <option value={3}>3 - Possible</option>
-                                        <option value={4}>4 - Likely</option>
-                                        <option value={5}>
-                                          5 - Almost Certain
-                                        </option>
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs text-gray-500 mb-1">
-                                        Residual Score
-                                      </label>
-                                      <div className={`px-3 py-1 rounded-md text-sm font-medium ${getRiskLevelColor(getRiskLevel(risk.residualScore))}`}>
-                                        {risk.residualScore} -{' '}
-                                        {getRiskLevelText(getRiskLevel(risk.residualScore))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-3">
-                                  {risk.isCustom && <button onClick={() => handleDeleteRisk(step.id, risk.id)} className="text-red-500 hover:text-red-700">
-                                      <XIcon size={18} />
-                                    </button>}
-                                </td>
-                              </tr>)}
-                          </tbody>
-                        </table>
-                      </div> : <p className="text-gray-500 text-center py-4">
-                        No risks identified for this step yet.
-                      </p>}
-                    {isAddingRisk === step.id ? <div className="mt-4 border border-blue-200 rounded-md p-4 bg-blue-50">
-                        <h5 className="font-medium text-gray-800 mb-3">
-                          Add New Risk
-                        </h5>
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Risk Description
-                            </label>
-                            <input type="text" value={newRisk.description} onChange={e => setNewRisk({
+                              </label>
+                              <input type="text" value={newRisk.description} onChange={e => setNewRisk({
                       ...newRisk,
                       description: e.target.value
                     })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Describe the risk..." />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Initial Assessment
-                              </label>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="block text-xs text-gray-500 mb-1">
-                                    Severity
-                                  </label>
-                                  <select value={newRisk.severity} onChange={e => setNewRisk({
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Initial Assessment
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-xs text-gray-500 mb-1">
+                                      Severity
+                                    </label>
+                                    <select value={newRisk.severity} onChange={e => setNewRisk({
                             ...newRisk,
                             severity: parseInt(e.target.value)
                           })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    <option value={1}>1 - Minimal</option>
-                                    <option value={2}>2 - Minor</option>
-                                    <option value={3}>3 - Moderate</option>
-                                    <option value={4}>4 - Major</option>
-                                    <option value={5}>5 - Catastrophic</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-xs text-gray-500 mb-1">
-                                    Likelihood
-                                  </label>
-                                  <select value={newRisk.likelihood} onChange={e => setNewRisk({
+                                      <option value={1}>1 - Minimal</option>
+                                      <option value={2}>2 - Minor</option>
+                                      <option value={3}>3 - Moderate</option>
+                                      <option value={4}>4 - Major</option>
+                                      <option value={5}>
+                                        5 - Catastrophic
+                                      </option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-gray-500 mb-1">
+                                      Likelihood
+                                    </label>
+                                    <select value={newRisk.likelihood} onChange={e => setNewRisk({
                             ...newRisk,
                             likelihood: parseInt(e.target.value)
                           })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    <option value={1}>1 - Rare</option>
-                                    <option value={2}>2 - Unlikely</option>
-                                    <option value={3}>3 - Possible</option>
-                                    <option value={4}>4 - Likely</option>
-                                    <option value={5}>
-                                      5 - Almost Certain
+                                      <option value={1}>1 - Rare</option>
+                                      <option value={2}>2 - Unlikely</option>
+                                      <option value={3}>3 - Possible</option>
+                                      <option value={4}>4 - Likely</option>
+                                      <option value={5}>
+                                        5 - Almost Certain
+                                      </option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Mitigation
+                                </label>
+                                <textarea value={newRisk.mitigation} onChange={e => setNewRisk({
+                        ...newRisk,
+                        mitigation: e.target.value
+                      })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="How will this risk be mitigated?" rows={1} />
+                                <div className="mt-1">
+                                  <select value={newRisk.mitigationType} onChange={e => setNewRisk({
+                          ...newRisk,
+                          mitigationType: e.target.value as any
+                        })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="Engineering">
+                                      Engineering
+                                    </option>
+                                    <option value="Operational">
+                                      Operational
+                                    </option>
+                                    <option value="Routing">Routing</option>
+                                    <option value="Communication">
+                                      Communication
                                     </option>
                                   </select>
                                 </div>
@@ -573,65 +708,38 @@ export const RiskAssessment: React.FC<RiskAssessmentProps> = ({
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Mitigation
+                                Residual Likelihood
                               </label>
-                              <textarea value={newRisk.mitigation} onChange={e => setNewRisk({
-                        ...newRisk,
-                        mitigation: e.target.value
-                      })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="How will this risk be mitigated?" rows={1} />
-                              <div className="mt-1">
-                                <select value={newRisk.mitigationType} onChange={e => setNewRisk({
-                          ...newRisk,
-                          mitigationType: e.target.value as any
-                        })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                  <option value="Engineering">
-                                    Engineering
-                                  </option>
-                                  <option value="Operational">
-                                    Operational
-                                  </option>
-                                  <option value="Routing">Routing</option>
-                                  <option value="Communication">
-                                    Communication
-                                  </option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Residual Likelihood
-                            </label>
-                            <select value={newRisk.residualLikelihood} onChange={e => setNewRisk({
+                              <select value={newRisk.residualLikelihood} onChange={e => setNewRisk({
                       ...newRisk,
                       residualLikelihood: parseInt(e.target.value)
                     })} className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
-                              <option value={1}>1 - Rare</option>
-                              <option value={2}>2 - Unlikely</option>
-                              <option value={3}>3 - Possible</option>
-                              <option value={4}>4 - Likely</option>
-                              <option value={5}>5 - Almost Certain</option>
-                            </select>
+                                <option value={1}>1 - Rare</option>
+                                <option value={2}>2 - Unlikely</option>
+                                <option value={3}>3 - Possible</option>
+                                <option value={4}>4 - Likely</option>
+                                <option value={5}>5 - Almost Certain</option>
+                              </select>
+                            </div>
+                            <div className="flex justify-end space-x-3 mt-2">
+                              <button onClick={handleCancelNewRisk} className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 text-sm hover:bg-gray-50">
+                                Cancel
+                              </button>
+                              <button onClick={() => handleSaveNewRisk(step.id)} className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700" disabled={!newRisk.description}>
+                                Save Risk
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex justify-end space-x-3 mt-2">
-                            <button onClick={handleCancelNewRisk} className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 text-sm hover:bg-gray-50">
-                              Cancel
-                            </button>
-                            <button onClick={() => handleSaveNewRisk(step.id)} className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700" disabled={!newRisk.description}>
-                              Save Risk
-                            </button>
-                          </div>
-                        </div>
-                      </div> : <div className="mt-4 flex justify-center">
-                        <button onClick={() => handleAddRisk(step.id)} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-gray-50">
-                          <PlusIcon size={16} />
-                          <span>Add Custom Risk</span>
-                        </button>
-                      </div>}
-                  </div>}
-              </div>;
+                        </div> : <div className="mt-4 flex justify-center">
+                          <button onClick={() => handleAddRisk(step.id)} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-gray-50">
+                            <PlusIcon size={16} />
+                            <span>Add Custom Risk</span>
+                          </button>
+                        </div>}
+                    </div>}
+                </div>;
         })}
-        </div>
+          </div>}
       </div>
     </div>;
 };
