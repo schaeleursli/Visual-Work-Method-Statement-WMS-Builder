@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderForm } from './HeaderForm';
 import { StepChain } from './StepChain';
+import { SmartStepChain } from './SmartStepChain';
 import { EquipmentSelector } from '../EquipmentSelector';
 import { AttachmentsPanel } from './AttachmentsPanel';
 import { RiskAssessment } from './RiskAssessment';
@@ -13,6 +14,7 @@ import { ArrowLeftIcon, SaveIcon, FileTextIcon, EyeIcon, AlertTriangleIcon, User
 const initialStep = {
   id: 1,
   title: 'Load on Barge',
+  description: 'Loading cargo onto the barge using shore crane',
   equipment: 'Barge ABC-21',
   additionalEquipment: ['Crane: LTM 11200', 'Rigging: 4-leg chain sling (8t)'],
   attachments: []
@@ -90,6 +92,7 @@ export const WMSBuilder: React.FC = () => {
     const newStep = {
       id: steps.length + 1,
       title: 'New Step',
+      description: '',
       equipment: '',
       additionalEquipment: [],
       attachments: []
@@ -99,6 +102,14 @@ export const WMSBuilder: React.FC = () => {
   };
   const updateStep = (updatedStep: any) => {
     setSteps(steps.map(step => step.id === updatedStep.id ? updatedStep : step));
+  };
+  const removeStep = (stepId: number) => {
+    if (steps.length > 1) {
+      setSteps(steps.filter(step => step.id !== stepId));
+      if (selectedStep === stepId) {
+        setSelectedStep(steps[0].id);
+      }
+    }
   };
   // Collect all risks from all steps
   const getAllRisks = () => {
@@ -194,6 +205,9 @@ export const WMSBuilder: React.FC = () => {
         <button className={`py-2 px-4 font-medium rounded-md ${activeTab === 'steps' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveTab('steps')}>
           Step Builder
         </button>
+        <button className={`py-2 px-4 font-medium rounded-md ${activeTab === 'smart_steps' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveTab('smart_steps')}>
+          Smart Workflow
+        </button>
         <button className={`py-2 px-4 font-medium rounded-md ${activeTab === 'risks' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => setActiveTab('risks')}>
           <div className="flex items-center space-x-1">
             <AlertTriangleIcon size={16} />
@@ -232,6 +246,7 @@ export const WMSBuilder: React.FC = () => {
         </button>
       </div>
       {activeTab === 'steps' && <StepChain steps={steps} selectedStep={selectedStep} onSelectStep={setSelectedStep} onAddStep={addNewStep} onUpdateStep={updateStep} />}
+      {activeTab === 'smart_steps' && <SmartStepChain steps={steps} onUpdateStep={updateStep} onAddStep={addNewStep} onRemoveStep={removeStep} />}
       {activeTab === 'risks' && <RiskAssessment steps={steps} onUpdateStep={updateStep} />}
       {activeTab === 'equipment' && <EquipmentSelector onSelectEquipment={equipment => {
       if (selectedStep) {
